@@ -3,12 +3,14 @@
 #include "escalonador.h"
 #include "processo.h"
 #include <stdlib.h>
+#include "rel.h"
 
 struct so_t {
   contr_t *contr;       // o controlador do hardware
   bool paniquei;        // apareceu alguma situação intratável
   cpu_estado_t *cpue;   // cópia do estado da CPU
-  no_t* escalonador;   // tabela de processos
+  no_t* escalonador;    // tabela de processos
+  int num_interrup;
 };
 
 // funções auxiliares
@@ -30,7 +32,7 @@ so_t *so_cria(contr_t *contr)
   insere(&self->escalonador, processo);
   // coloca a CPU em modo usuário
   exec_copia_estado(contr_exec(self->contr), self->cpue);
-  cpue_muda_modo(self->cpue, usuario);
+  cpue_muda_modo(self->cpue, usuario, rel_agora(contr_rel(self->contr)));
   exec_altera_estado(contr_exec(self->contr), self->cpue);
   return self;
 }
@@ -65,18 +67,21 @@ static void so_trata_sisop_le(so_t *self)
                               self->cpue, disp, leitura);
     processo_t* processo = retorna_proximo_pronto(self->escalonador);
     if (processo == NULL) {
-      cpue_muda_modo(self->cpue, zumbi);
+      cpue_muda_modo(self->cpue, zumbi, rel_agora(contr_rel(self->contr)));
+      inc = 0;
     } else {
-      cpue_muda_modo(self->cpue, usuario);
+      cpue_muda_modo(self->cpue, usuario, rel_agora(contr_rel(self->contr)));
       processo_executa(processo);
       cpue_copia(processo_cpu(processo), self->cpue);
       contr_copia_mem(self->contr, processo_mem(processo));
       inc = 0;
     }
+    
   }
   // incrementa o PC
   cpue_muda_PC(self->cpue, cpue_PC(self->cpue) + inc);
   // interrupção da cpu foi atendida
+  interrupcao_atendida(self, err);
   cpue_muda_erro(self->cpue, err, 0);
   // altera o estado da CPU
   exec_altera_estado(contr_exec(self->contr), self->cpue);
@@ -103,9 +108,10 @@ static void so_trata_sisop_escr(so_t *self)
                               self->cpue, disp, escrita);
     processo_t* processo = retorna_proximo_pronto(self->escalonador);
     if (processo == NULL) {
-      cpue_muda_modo(self->cpue, zumbi);
+      cpue_muda_modo(self->cpue, zumbi, rel_agora(contr_rel(self->contr)));
+      inc = 0;
     } else {
-      cpue_muda_modo(self->cpue, usuario);
+      cpue_muda_modo(self->cpue, usuario, rel_agora(contr_rel(self->contr)));
       processo_executa(processo);
       cpue_copia(processo_cpu(processo), self->cpue);
       contr_copia_mem(self->contr, processo_mem(processo));
@@ -114,6 +120,7 @@ static void so_trata_sisop_escr(so_t *self)
   }
 
   // interrupção da cpu foi atendida
+  interrupcao_atendida(self, err);
   cpue_muda_erro(self->cpue, err, 0);
   // incrementa o PC
   cpue_muda_PC(self->cpue, cpue_PC(self->cpue)+ inc);
@@ -131,14 +138,15 @@ static void so_trata_sisop_fim(so_t *self)
   } else {
     processo_t* processo = retorna_proximo_pronto(self->escalonador);
     if (processo == NULL) {
-      cpue_muda_modo(self->cpue, zumbi);
+      cpue_muda_modo(self->cpue, zumbi, rel_agora(contr_rel(self->contr)));
     } else {
-      cpue_muda_modo(self->cpue, usuario);
+      cpue_muda_modo(self->cpue, usuario, rel_agora(contr_rel(self->contr)));
       processo_executa(processo);
       cpue_copia(processo_cpu(processo), self->cpue);
       contr_copia_mem(self->contr, processo_mem(processo));     
     }
     // interrupção da cpu foi atendida
+    interrupcao_atendida(self, err);
     cpue_muda_erro(self->cpue, ERR_OK, 0);
     // incrementa o PC
     cpue_muda_PC(self->cpue, cpue_PC(self->cpue));
@@ -158,6 +166,7 @@ static void so_trata_sisop_cria(so_t *self)
     insere(&self->escalonador, processo);
   }
   // interrupção da cpu foi atendida
+  interrupcao_atendida(self, err);
   cpue_muda_erro(self->cpue, err, 0);
   // incrementa o PC
   cpue_muda_PC(self->cpue, cpue_PC(self->cpue)+2);
@@ -194,19 +203,21 @@ static void so_trata_sisop(so_t *self)
 static void so_trata_tic(so_t *self)
 {
   processo_t* processo;
+  err_t err = ERR_OK;
 
   if (!tem_processo_executando(self->escalonador)) {
     processo = retorna_proximo_pronto(self->escalonador);
     if (processo == NULL) {
-      cpue_muda_modo(self->cpue, zumbi);
+      cpue_muda_modo(self->cpue, zumbi, rel_agora(contr_rel(self->contr)));
     } else {
-      cpue_muda_modo(self->cpue, usuario);
+      cpue_muda_modo(self->cpue, usuario, rel_agora(contr_rel(self->contr)));
       processo_executa(processo);
       cpue_copia(processo_cpu(processo), self->cpue);
-      contr_copia_mem(self->contr, processo_mem(processo));
+      err = contr_copia_mem(self->contr, processo_mem(processo));
     }
     // interrupção da cpu foi atendida
-    cpue_muda_erro(self->cpue, ERR_OK, 0);
+    interrupcao_atendida(self, err);
+    cpue_muda_erro(self->cpue, err, 0);
     // incrementa o PC
     cpue_muda_PC(self->cpue, cpue_PC(self->cpue));
     // altera o estado da CPU
@@ -265,5 +276,20 @@ static void panico(so_t *self)
 {
   t_printf("Problema irrecuperavel no SO");
   self->paniquei = true;
+
 }
+
+void interrupcao_atendida(so_t *self, err_t err) 
+{
+  if (err == ERR_OK) self->num_interrup ++;
+}
+
+int so_tempo_exec(so_t *self)
+{
+  rel_t *rel = contr_rel(self->contr);
+  return rel_agora(rel);
+}
+
+
+
 

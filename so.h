@@ -33,4 +33,8 @@ void so_int(so_t *self, err_t err);
 // retorna false se o sistema deve ser desligado
 bool so_ok(so_t *self);
 
+void interrupcao_atendida(so_t *self, err_t err);
+
+int so_tempo_exec(so_t *self);
+
 #endif // SO_H

@@ -44,5 +44,5 @@ void cpue_muda_PC(cpu_estado_t *self, int val);
 void cpue_muda_A(cpu_estado_t *self, int val);
 void cpue_muda_X(cpu_estado_t *self, int val);
 void cpue_muda_erro(cpu_estado_t *self, err_t err, int complemento);
-void cpue_muda_modo(cpu_estado_t *self, cpu_modo_t modo);
+void cpue_muda_modo(cpu_estado_t *self, cpu_modo_t modo, int agora);
 #endif // CPU_E_H

@@ -9,6 +9,8 @@ struct cpu_estado_t {
   err_t erro;
   int complemento;
   cpu_modo_t modo;
+  int tempo_parado; // em num de instruc
+  int ultima_leitura_rel;
 };
 
 cpu_estado_t *cpue_cria(void)
@@ -22,6 +24,7 @@ cpu_estado_t *cpue_cria(void)
     self->erro = ERR_OK;
     self->complemento = 0;
     self->modo = supervisor;
+    self->tempo_parado = 0;
   }
   return self;
 }
@@ -88,7 +91,15 @@ void cpue_muda_erro(cpu_estado_t *self, err_t err, int complemento)
   self->complemento = complemento;
 }
 
-void cpue_muda_modo(cpu_estado_t *self, cpu_modo_t modo)
+void cpue_muda_modo(cpu_estado_t *self, cpu_modo_t modo, int agora)
 {
+  if (self->modo != zumbi && modo == zumbi) {
+    self->ultima_leitura_rel = agora;
+  }
+
+  if (self->modo == zumbi && modo != zumbi) {
+    self->tempo_parado += agora - self->ultima_leitura_rel;
+  }
+  
   self->modo = modo;
 }

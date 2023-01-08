@@ -86,6 +86,10 @@ es_t *contr_es(contr_t *self)
   return self->es;
 }
 
+rel_t *contr_rel(contr_t *self){
+  return self->rel;
+}
+
 void contr_laco(contr_t *self)
 {
   // executa uma instrução por vez até SO dizer que chega
@@ -142,4 +146,5 @@ void contr_atualiza_estado(contr_t *self)
 err_t contr_copia_mem(contr_t* self, mem_t* memoria)
 {
   return mem_copia(contr_mem(self), memoria);
+
 }

@@ -2,6 +2,7 @@
 #define CPU_E_H
 
 #include "err.h"
+#include "rel.h"
 
 // TAD para manter o estado interno da CPU (valores dos registradores, modo de execução, etc)
 
@@ -38,11 +39,13 @@ err_t cpue_erro(cpu_estado_t *self);
 int cpue_complemento(cpu_estado_t *self);
 // retorno o modo de execução da CPU
 cpu_modo_t cpue_modo(cpu_estado_t *self);
+// retorna o tempo total de execução da CPU em num de instruções
+int cpu_tempo_total(cpu_estado_t *self, int so_tempo_total);
 
 // funções para alterar partes do estado
 void cpue_muda_PC(cpu_estado_t *self, int val);
 void cpue_muda_A(cpu_estado_t *self, int val);
 void cpue_muda_X(cpu_estado_t *self, int val);
 void cpue_muda_erro(cpu_estado_t *self, err_t err, int complemento);
-void cpue_muda_modo(cpu_estado_t *self, cpu_modo_t modo, int agora);
+void cpue_muda_modo(cpu_estado_t *self, cpu_modo_t modo, rel_t *rel);
 #endif // CPU_E_H

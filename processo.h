@@ -10,8 +10,18 @@
 
 typedef struct processo_t processo_t;
 typedef enum { pronto, em_execucao, bloqueado } processo_estado_t;
+typedef enum {
+    TEMPO_PRONTO, 
+    TEMPO_EXECUTANDO, 
+    TEMPO_BLOQUEADO,
+    REL_ULTIMA_PREEMP, 
+    REL_ULTIMA_EXEC, 
+    REL_ULTIMO_BLOQUEIO,
+    NUM_BLOQUEIOS,
+    NUM_PREEMPCOES
+} processo_metricas_t;
 
-processo_t* processo_cria(int num, processo_estado_t estado);
+processo_t *processo_cria(int num, processo_estado_t estado, int agora);
 
 //inicia a memória do processo quando criado
 err_t processo_init_mem(processo_t *self);
@@ -19,21 +29,21 @@ err_t processo_init_mem(processo_t *self);
 // transfere o .maq para a memória do progrma 
 err_t transf_mem(processo_t *self, int* progr, int tam_progr);
 
-void processo_destroi(processo_t* self);
+void processo_destroi(processo_t* self, int agora);
 
 //muda o estado do processo para em_execução
-void processo_executa(processo_t* self);
+void processo_executa(processo_t* self, int agora);
 
 //muda o estado do processo para bloqueado
 //salva junto ao processo:
 //- estados da cpu e memoria no momento do bloqueio;
 //- dispositivo que causou o bloqueio;
 //- tipo de chamada que causou o bloqueio (e/s).
-void processo_bloqueia(processo_t* self, mem_t* memoria, 
-                      cpu_estado_t* cpu_estado, int disp, acesso_t chamada);
+void processo_bloqueia(processo_t* self, mem_t* memoria, cpu_estado_t* cpu_estado, 
+                      int disp, acesso_t chamada, int agora);
 
 //muda o estado do processo para pronto
-void processo_desbloqueia(processo_t* self);
+void processo_desbloqueia(processo_t* self, int agora);
 
 // retorna o estado da memória do processo
 mem_t* processo_mem(processo_t* self);

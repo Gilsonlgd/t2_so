@@ -5,6 +5,7 @@
 #include "err.h"
 #include "es.h"
 #include "tela.h"
+#include "rel.h"
 
 
 // Estrutura que representa um nó da lista de processos
@@ -48,7 +49,7 @@ processo_t* retorna_proximo_pronto(no_t* self) {
     return NULL;
 }
 
-err_t finaliza_processo_em_exec(no_t** self)
+err_t finaliza_processo_em_exec(no_t** self, rel_t* rel)
 {
     no_t* atual = *self;
     no_t* anterior = NULL;
@@ -61,7 +62,7 @@ err_t finaliza_processo_em_exec(no_t** self)
             } else {
                 anterior->next = atual->next;
             }
-            processo_destroi(atual->processo);
+            processo_destroi(atual->processo, rel_agora(rel));
             free(atual);
             return err;
         }
@@ -74,19 +75,19 @@ err_t finaliza_processo_em_exec(no_t** self)
 
 void bloqueia_processo_em_exec(no_t **self, mem_t* mem, 
                                cpu_estado_t* cpu_estado, int disp, 
-                               acesso_t chamada)
+                               acesso_t chamada, rel_t *rel)
 {
     no_t* atual = *self;
     while (atual != NULL) {
         if (processo_estado(atual->processo) == em_execucao) {
-            processo_bloqueia(atual->processo, mem, cpu_estado, disp, chamada);
+            processo_bloqueia(atual->processo, mem, cpu_estado, disp, chamada, rel_agora(rel));
             break;
         }
         atual = atual->next;
     }
 }
 
-void varre_processos(no_t** self, contr_t* contr)
+void varre_processos(no_t** self, contr_t* contr, rel_t *rel)
 {
     no_t* atual = *self;
     bool pronto;
@@ -95,7 +96,7 @@ void varre_processos(no_t** self, contr_t* contr)
             pronto = es_pronto(contr_es(contr), processo_disp(atual->processo), 
                            processo_chamada(atual->processo));
             if(pronto) {
-                processo_desbloqueia(atual->processo);
+                processo_desbloqueia(atual->processo, rel_agora(rel));
             }
         }
         atual = atual->next;

@@ -24,7 +24,7 @@ processo_t* busca(no_t *self, int num);
 processo_t* retorna_proximo_pronto(no_t* self);
 
 //finaliza o processo atualmente em execução
-err_t finaliza_processo_em_exec(no_t** self);
+err_t finaliza_processo_em_exec(no_t** self, rel_t* rel);
 
 //bloqueia o processo atualmente em execução
 //salva junto ao processo:
@@ -33,13 +33,13 @@ err_t finaliza_processo_em_exec(no_t** self);
 //- tipo de chamada que causou o bloqueio (e/s).
 void bloqueia_processo_em_exec(no_t **self, mem_t* mem, 
                                cpu_estado_t* cpu_estado, int disp, 
-                               acesso_t chamada);
+                               acesso_t chamada, rel_t *rel);
 
 //varre todos os processos da tabela, desbloqueando
 //os processos que devem estar prontos para exec
 //(utiliza es_pronto para conferir se o dispositivo
 //que causou o bloqueio agora está disponível).
-void varre_processos(no_t** self, contr_t* contr);
+void varre_processos(no_t** self, contr_t* contr, rel_t *rel);
 
 //retorna true se houve processo em execução.
 bool tem_processo_executando(no_t* self);

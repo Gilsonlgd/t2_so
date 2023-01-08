@@ -10,13 +10,16 @@
 struct processo_t {
   int num;
   int disp;
+  int t_criacao;
+  int t_finalizacao;
+  int* metricas;
   acesso_t chamada_bloqueio;
   processo_estado_t estado;
   mem_t* memoria;
   cpu_estado_t* cpu_estado;
 };
 
-processo_t *processo_cria(int num, processo_estado_t estado)
+processo_t *processo_cria(int num, processo_estado_t estado, int agora)
 {
     processo_t *self;
     self = malloc(sizeof(processo_t));
@@ -26,6 +29,9 @@ processo_t *processo_cria(int num, processo_estado_t estado)
     self->disp = 0;
     self->chamada_bloqueio = 0;
     self->memoria = mem_cria(MEM_TAM);
+    self->t_criacao = agora;
+    self->t_finalizacao = 0;
+    self->metricas = calloc(0, 8*sizeof(int));
     return self;
 }
 
@@ -76,28 +82,38 @@ err_t transf_mem(processo_t *self, int* progr, int tam_progr)
   return ERR_END_INV;
 }
 
-void processo_destroi(processo_t* self)
+void processo_destroi(processo_t* self, int agora)
 {
+    self->t_finalizacao = agora;
+    free(self->metricas);
     free(self);
 }
 
-void processo_executa(processo_t* self) {
+void processo_executa(processo_t* self, int agora) {
     self->estado = em_execucao;
+    self->metricas[REL_ULTIMA_EXEC] = agora;
+    self->metricas[TEMPO_PRONTO] += agora - self->metricas[REL_ULTIMA_PREEMP];
 }
 
 void processo_bloqueia(processo_t* self, mem_t* memoria, cpu_estado_t* cpu_estado, 
-                      int disp, acesso_t chamada)
+                      int disp, acesso_t chamada, int agora)
 {
     self->estado = bloqueado;
     self->disp = disp;
     self->chamada_bloqueio = chamada;
     cpue_copia(cpu_estado, self->cpu_estado);
     mem_copia(self->memoria, memoria);
+    self->metricas[NUM_BLOQUEIOS]++;
+    self->metricas[REL_ULTIMO_BLOQUEIO] = agora;
+    self->metricas[TEMPO_EXECUTANDO] += agora - self->metricas[REL_ULTIMA_EXEC];
 }
 
-void processo_desbloqueia(processo_t* self)
+void processo_desbloqueia(processo_t* self, int agora)
 {
     self->estado = pronto;
+    self->metricas[NUM_PREEMPCOES]++;
+    self->metricas[REL_ULTIMA_PREEMP] = agora;
+    self->metricas[TEMPO_BLOQUEADO] += agora - self->metricas[REL_ULTIMO_BLOQUEIO];
 }
 
 mem_t* processo_mem(processo_t* self) {
@@ -124,6 +140,16 @@ int processo_num(processo_t* self) {
 int processo_disp(processo_t* processo)
 {
     return processo->disp;
+}
+
+int processo_tmedio_retorno(processo_t* self)
+{
+    return self->metricas[TEMPO_PRONTO] / self->metricas[NUM_PREEMPCOES];
+}
+
+int processo_t_retorno(processo_t* self)
+{
+    return self->t_finalizacao - self->t_criacao;
 }
 
 

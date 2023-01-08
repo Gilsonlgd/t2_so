@@ -91,15 +91,20 @@ void cpue_muda_erro(cpu_estado_t *self, err_t err, int complemento)
   self->complemento = complemento;
 }
 
-void cpue_muda_modo(cpu_estado_t *self, cpu_modo_t modo, int agora)
+void cpue_muda_modo(cpu_estado_t *self, cpu_modo_t modo, rel_t *rel)
 {
   if (self->modo != zumbi && modo == zumbi) {
-    self->ultima_leitura_rel = agora;
+    self->ultima_leitura_rel = rel_agora(rel);
   }
 
   if (self->modo == zumbi && modo != zumbi) {
-    self->tempo_parado += agora - self->ultima_leitura_rel;
+    self->tempo_parado += rel_agora(rel) - self->ultima_leitura_rel;
   }
   
   self->modo = modo;
+}
+
+int cpu_tempo_total(cpu_estado_t *self, int so_tempo_total)
+{
+  return so_tempo_total - self->tempo_parado;
 }

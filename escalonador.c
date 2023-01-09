@@ -63,7 +63,7 @@ err_t finaliza_processo_em_exec(no_t** self, rel_t* rel)
                 anterior->next = atual->next;
             }
             processo_destroi(atual->processo, rel_agora(rel));
-            free(atual);
+            if (atual != NULL) free(atual);
             return err;
         }
         anterior = atual;

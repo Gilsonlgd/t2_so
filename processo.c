@@ -85,8 +85,12 @@ err_t transf_mem(processo_t *self, int* progr, int tam_progr)
 void processo_destroi(processo_t* self, int agora)
 {
     self->t_finalizacao = agora;
-    free(self->metricas);
-    free(self);
+    if (self != NULL) {
+        if (self->metricas != NULL) {
+            free(self->metricas);
+        }
+        free(self);
+    }
 }
 
 void processo_executa(processo_t* self, int agora) {

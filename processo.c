@@ -10,6 +10,7 @@
 struct processo_t {
   int num;
   int disp;
+  int quantum;
   int t_criacao;
   int t_finalizacao;
   int* metricas;
@@ -31,7 +32,7 @@ processo_t *processo_cria(int num, processo_estado_t estado, int agora)
     self->memoria = mem_cria(MEM_TAM);
     self->t_criacao = agora;
     self->t_finalizacao = 0;
-    self->metricas = calloc(0, 8*sizeof(int));
+    self->metricas = calloc(8, sizeof(int));
     return self;
 }
 
@@ -90,6 +91,8 @@ void processo_destroi(processo_t* self, int agora)
             free(self->metricas);
         }
         free(self);
+    } else {
+        t_printf("Erro ao destruir processo");
     }
 }
 
@@ -120,6 +123,11 @@ void processo_desbloqueia(processo_t* self, int agora)
     self->metricas[TEMPO_BLOQUEADO] += agora - self->metricas[REL_ULTIMO_BLOQUEIO];
 }
 
+void processo_tik(processo_t* self)
+{
+    if (self->quantum > 0) self->quantum--;
+}
+
 mem_t* processo_mem(processo_t* self) {
     return self->memoria;
 }
@@ -144,6 +152,11 @@ int processo_num(processo_t* self) {
 int processo_disp(processo_t* processo)
 {
     return processo->disp;
+}
+
+int processo_quantum(processo_t* processo)
+{
+    return processo->quantum;
 }
 
 int processo_tmedio_retorno(processo_t* self)

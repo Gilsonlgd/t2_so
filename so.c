@@ -1,6 +1,6 @@
 #include "so.h"
 #include "tela.h"
-#include "escalonador.h"
+#include "escalonador_circular.h"
 #include "processo.h"
 #include <stdlib.h>
 #include "rel.h"
@@ -9,7 +9,7 @@ struct so_t {
   contr_t *contr;       // o controlador do hardware
   bool paniquei;        // apareceu alguma situação intratável
   cpu_estado_t *cpue;   // cópia do estado da CPU
-  no_t* escalonador;    // tabela de processos
+  esc_circ_t* escalonador;    // tabela de processos
   int num_interrup;
 };
 
@@ -22,15 +22,15 @@ so_t *so_cria(contr_t *contr)
   so_t *self = malloc(sizeof(*self));
   if (self == NULL) return NULL;
   rel_t *rel = contr_rel(contr);
+  self->escalonador = esc_cria();
   self->contr = contr;
   self->paniquei = false;
   self->cpue = cpue_cria();
-  self->escalonador = NULL;
   init_mem(self);
   //Cria o primeiro processo
   processo_t* processo = processo_cria(0, pronto, rel_agora(rel));
   processo_executa(processo, rel_agora(rel));
-  insere(&self->escalonador, processo);
+  esc_executa(self->escalonador, processo);
   // coloca a CPU em modo usuário
   exec_copia_estado(contr_exec(self->contr), self->cpue);
   cpue_muda_modo(self->cpue, usuario, contr_rel(self->contr));
@@ -64,7 +64,7 @@ static void so_trata_sisop_le(so_t *self)
     cpue_muda_A(self->cpue, err);
     cpue_muda_X(self->cpue, val);
   } else {
-    bloqueia_processo_em_exec(&self->escalonador, contr_mem(self->contr), 
+    bloqueia_processo_em_exec(self->escalonador, contr_mem(self->contr), 
                               self->cpue, disp, leitura, contr_rel(self->contr));
     processo_t* processo = retorna_proximo_pronto(self->escalonador);
     if (processo == NULL) {
@@ -99,13 +99,13 @@ static void so_trata_sisop_escr(so_t *self)
   int disp = cpue_A(self->cpue);
   int val = cpue_X(self->cpue);
   err_t err = ERR_OK;
-
+  
   pronto = es_pronto(contr_es(self->contr), disp, escrita);
   if(pronto) {
     err = es_escreve(contr_es(self->contr), disp, val);
     cpue_muda_A(self->cpue, err);
   } else {
-    bloqueia_processo_em_exec(&self->escalonador, contr_mem(self->contr), 
+    bloqueia_processo_em_exec(self->escalonador, contr_mem(self->contr), 
                               self->cpue, disp, escrita, contr_rel(self->contr));
     processo_t* processo = retorna_proximo_pronto(self->escalonador);
     if (processo == NULL) {
@@ -132,7 +132,7 @@ static void so_trata_sisop_escr(so_t *self)
 // chamada de sistema para término do processo
 static void so_trata_sisop_fim(so_t *self)
 {
-  err_t err = finaliza_processo_em_exec(&self->escalonador, contr_rel(self->contr));
+  err_t err = finaliza_processo_em_exec(self->escalonador, contr_rel(self->contr));
   if(err != ERR_OK) {
     t_printf("Erro na finalização do processo.");
     self->paniquei = true;
@@ -164,7 +164,7 @@ static void so_trata_sisop_cria(so_t *self)
   if (err != ERR_OK) {
     panico(self);
   } else {
-    insere(&self->escalonador, processo);
+    insereF_fila(self->escalonador, processo);
   }
   // interrupção da cpu foi atendida
   interrupcao_atendida(self, err);
@@ -229,7 +229,7 @@ static void so_trata_tic(so_t *self)
 // houve uma interrupção do tipo err — trate-a
 void so_int(so_t *self, err_t err)
 {
-  varre_processos(&self->escalonador, self->contr, contr_rel(self->contr));
+  varre_processos(self->escalonador, self->contr, contr_rel(self->contr));
  
   switch (err) {
     case ERR_SISOP:
@@ -250,6 +250,8 @@ bool so_ok(so_t *self)
   if (!tem_processo_vivo(self->escalonador)) {
     self->paniquei = true;
     t_printf("Sistema Finalizado");
+    //printa métricas
+    esc_destroi(self->escalonador);
   }
   return !self->paniquei;
 }

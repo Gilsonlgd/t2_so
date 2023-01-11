@@ -42,6 +42,8 @@ void processo_executa(processo_t* self, int agora);
 void processo_bloqueia(processo_t* self, mem_t* memoria, cpu_estado_t* cpu_estado, 
                       int disp, acesso_t chamada, int agora);
 
+void processo_tik(processo_t* self);
+
 //muda o estado do processo para pronto
 void processo_desbloqueia(processo_t* self, int agora);
 
@@ -62,6 +64,8 @@ int processo_num(processo_t* self) ;
 
 //retorna o dispositivo que causou o último bloqueio do processo
 int processo_disp(processo_t* processo);
+
+int processo_quantum(processo_t* processo);
 
 
 #endif

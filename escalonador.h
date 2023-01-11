@@ -6,8 +6,8 @@
 #include "contr.h"
 
 
-#ifndef ESCALONADOR_H
-#define ESCALONADOR_H
+#ifndef LISTA_H
+#define LISTA_H
 
 typedef struct no_t no_t;
 

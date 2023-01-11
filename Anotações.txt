@@ -2,7 +2,7 @@ Escalonador circular (round-robin).
 - Nesse escalonador, os processos prontos são colocados em uma fila. (FEITO)
 - Quando há uma troca de processo, é escolhido o primeiro da fila. (FEITO)
 - Quando o estado de um processo muda para pronto (ou quando há prempção), é colocado no final da fila. (FEITO)
-- Quando um processo é retirado da fila (foi o escolhido para executar), recebe um quantum, uma certa quantidade de tempo de CPU que ele tem o direito de usar.
+- Quando um processo é retirado da fila (foi o escolhido para executar), recebe um quantum, uma certa quantidade de tempo de CPU que ele tem o direito de usar. (FEITO)
 - Cada vez que o SO executa, o escalonador verifica se o processe em execução não ultrapassou seu quantum, e realiza a preempção 
 - O quantum é igual para todos, e geralmente corresponde ao tempo de algumas interrupções de relógio.
 

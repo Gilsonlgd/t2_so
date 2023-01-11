@@ -32,7 +32,7 @@ err_t transf_mem(processo_t *self, int* progr, int tam_progr);
 void processo_destroi(processo_t* self, int agora);
 
 //muda o estado do processo para em_execução
-void processo_executa(processo_t* self, int agora);
+void processo_executa(processo_t* self, int agora, int quantum);
 
 //muda o estado do processo para bloqueado
 //salva junto ao processo:
@@ -66,6 +66,8 @@ int processo_num(processo_t* self) ;
 int processo_disp(processo_t* processo);
 
 int processo_quantum(processo_t* processo);
+
+void processo_muda_estado(processo_t* self, processo_estado_t estado);
 
 
 #endif

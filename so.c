@@ -22,14 +22,14 @@ so_t *so_cria(contr_t *contr)
   so_t *self = malloc(sizeof(*self));
   if (self == NULL) return NULL;
   rel_t *rel = contr_rel(contr);
-  self->escalonador = esc_cria();
+  self->escalonador = esc_cria(4);
   self->contr = contr;
   self->paniquei = false;
   self->cpue = cpue_cria();
   init_mem(self);
   //Cria o primeiro processo
   processo_t* processo = processo_cria(0, pronto, rel_agora(rel));
-  processo_executa(processo, rel_agora(rel));
+  processo_executa(processo, rel_agora(rel), esc_quantum(self->escalonador));
   esc_executa(self->escalonador, processo);
   // coloca a CPU em modo usuário
   exec_copia_estado(contr_exec(self->contr), self->cpue);
@@ -72,7 +72,7 @@ static void so_trata_sisop_le(so_t *self)
       inc = 0;
     } else {
       cpue_muda_modo(self->cpue, usuario, contr_rel(self->contr));
-      processo_executa(processo, rel_agora( contr_rel(self->contr) ));
+      processo_executa(processo, rel_agora( contr_rel(self->contr) ), esc_quantum(self->escalonador));
       cpue_copia(processo_cpu(processo), self->cpue);
       contr_copia_mem(self->contr, processo_mem(processo));
       inc = 0;
@@ -113,7 +113,7 @@ static void so_trata_sisop_escr(so_t *self)
       inc = 0;
     } else {
       cpue_muda_modo(self->cpue, usuario, contr_rel(self->contr));
-      processo_executa(processo, rel_agora( contr_rel(self->contr) ));
+      processo_executa(processo, rel_agora( contr_rel(self->contr) ), esc_quantum(self->escalonador));
       cpue_copia(processo_cpu(processo), self->cpue);
       contr_copia_mem(self->contr, processo_mem(processo));
       inc = 0;
@@ -142,7 +142,7 @@ static void so_trata_sisop_fim(so_t *self)
       cpue_muda_modo(self->cpue, zumbi, contr_rel(self->contr));
     } else {
       cpue_muda_modo(self->cpue, usuario, contr_rel(self->contr));
-      processo_executa(processo, rel_agora( contr_rel(self->contr) ));
+      processo_executa(processo, rel_agora( contr_rel(self->contr) ), esc_quantum(self->escalonador));
       cpue_copia(processo_cpu(processo), self->cpue);
       contr_copia_mem(self->contr, processo_mem(processo));     
     }
@@ -205,14 +205,16 @@ static void so_trata_tic(so_t *self)
 {
   processo_t* processo;
   err_t err = ERR_OK;
-
+  esc_tik(self->escalonador);
+  esc_verifica_quantum(self->escalonador);
+  imprime_tabela(head(self->escalonador));
   if (!tem_processo_executando(self->escalonador)) {
     processo = retorna_proximo_pronto(self->escalonador);
     if (processo == NULL) {
       cpue_muda_modo(self->cpue, zumbi, contr_rel(self->contr));
     } else {
       cpue_muda_modo(self->cpue, usuario, contr_rel(self->contr));
-      processo_executa(processo, rel_agora( contr_rel(self->contr) ));
+      processo_executa(processo, rel_agora( contr_rel(self->contr) ), esc_quantum(self->escalonador));
       cpue_copia(processo_cpu(processo), self->cpue);
       err = contr_copia_mem(self->contr, processo_mem(processo));
     }
@@ -229,7 +231,7 @@ static void so_trata_tic(so_t *self)
 // houve uma interrupção do tipo err — trate-a
 void so_int(so_t *self, err_t err)
 {
-  varre_processos(self->escalonador, self->contr, contr_rel(self->contr));
+  varre_processos_bloqueados(self->escalonador, self->contr, contr_rel(self->contr));
  
   switch (err) {
     case ERR_SISOP:

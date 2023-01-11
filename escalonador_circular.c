@@ -13,6 +13,7 @@ struct no_t {
 };
 
 struct esc_circ_t {
+    int quantum;
     no_t* head;
     no_t* last;
     processo_t* em_exec;
@@ -20,13 +21,14 @@ struct esc_circ_t {
     no_t* lista_finalizados;
 };
 
-esc_circ_t* esc_cria(void) {
+esc_circ_t* esc_cria(int quantum) {
     esc_circ_t* self = malloc(sizeof(*self));
     self->head = NULL;
     self->last = NULL;
     self->em_exec = NULL;
     self->lista_bloqueados = NULL;
     self->lista_finalizados = NULL;
+    self->quantum = quantum;
     return self;
 }
 
@@ -89,6 +91,7 @@ processo_t* retorna_proximo_pronto(esc_circ_t* self) {
     *head = new_head;
     if(*head == NULL) self->last = NULL;
 
+    
     return self->em_exec;
 }
 
@@ -114,7 +117,7 @@ void bloqueia_processo_em_exec(esc_circ_t* self, mem_t *mem,
     self->em_exec = NULL;
 }
 
-void varre_processos(esc_circ_t* self, contr_t *contr, rel_t *rel)
+void varre_processos_bloqueados(esc_circ_t* self, contr_t *contr, rel_t *rel)
 {
     no_t** lista = &self->lista_bloqueados;
     no_t* atual = *lista;
@@ -137,6 +140,20 @@ void varre_processos(esc_circ_t* self, contr_t *contr, rel_t *rel)
         anterior = atual;
         atual = atual->next;
     }
+}
+
+void esc_verifica_quantum(esc_circ_t* self)
+{
+    if (self->em_exec == NULL) {
+        return;
+    }
+    if (processo_quantum(self->em_exec) < 0) {
+        processo_muda_estado(self->em_exec, pronto);
+        insereF_fila(self, self->em_exec);
+        self->em_exec = NULL;
+    }
+
+    imprime_tabela(self->head);
 }
 
 bool tem_processo_executando(esc_circ_t* self)
@@ -164,7 +181,7 @@ void imprime_tabela(no_t* self)
 {
     no_t* atual = self;
     while (atual != NULL) {
-        t_printf("num: %d estado: %d", processo_num(atual->processo), processo_estado(atual->processo));
+        t_printf("num: %d estado: %d quantum: %d", processo_num(atual->processo), processo_estado(atual->processo), processo_quantum(atual->processo));
         atual = atual->next;
     }
 }
@@ -176,7 +193,16 @@ processo_t* esc_processo_executando(esc_circ_t* self)
 
 void esc_tik(esc_circ_t* self)
 {
-    processo_tik(self->em_exec);
+    if(self->em_exec != NULL) processo_tik(self->em_exec);
 }
 
+int esc_quantum(esc_circ_t* self)
+{
+    return self->quantum;
+}
+
+no_t* head(esc_circ_t* self)
+{
+    return self->head;
+}
 

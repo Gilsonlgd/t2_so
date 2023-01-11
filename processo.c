@@ -96,8 +96,9 @@ void processo_destroi(processo_t* self, int agora)
     }
 }
 
-void processo_executa(processo_t* self, int agora) {
+void processo_executa(processo_t* self, int agora, int quantum) {
     self->estado = em_execucao;
+    self->quantum = quantum;
     self->metricas[REL_ULTIMA_EXEC] = agora;
     self->metricas[TEMPO_PRONTO] += agora - self->metricas[REL_ULTIMA_PREEMP];
 }
@@ -125,7 +126,7 @@ void processo_desbloqueia(processo_t* self, int agora)
 
 void processo_tik(processo_t* self)
 {
-    if (self->quantum > 0) self->quantum--;
+    if (self->quantum >= 0) self->quantum--;
 }
 
 mem_t* processo_mem(processo_t* self) {
@@ -167,6 +168,11 @@ int processo_tmedio_retorno(processo_t* self)
 int processo_t_retorno(processo_t* self)
 {
     return self->t_finalizacao - self->t_criacao;
+}
+
+void processo_muda_estado(processo_t* self, processo_estado_t estado)
+{
+    self->estado = estado;
 }
 
 

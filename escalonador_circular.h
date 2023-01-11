@@ -11,7 +11,7 @@ typedef struct no_t no_t;
 
 typedef struct esc_circ_t esc_circ_t;
 
-esc_circ_t* esc_cria(void);
+esc_circ_t* esc_cria(int quantum);
 
 void esc_destroi(esc_circ_t* self);
 
@@ -29,7 +29,7 @@ void bloqueia_processo_em_exec(esc_circ_t* self, mem_t *mem,
                                cpu_estado_t *cpu_estado, int disp, 
                                acesso_t chamada, rel_t *rel);
 
-void varre_processos(esc_circ_t* self, contr_t *contr, rel_t *rel);
+void varre_processos_bloqueados(esc_circ_t* self, contr_t *contr, rel_t *rel);
 
 bool tem_processo_executando(esc_circ_t* self);
 
@@ -42,6 +42,12 @@ void imprime_tabela(no_t* self);
 processo_t* esc_processo_executando(esc_circ_t* self);
 
 void esc_tik(esc_circ_t* self);
+
+int esc_quantum(esc_circ_t* self);
+
+void esc_verifica_quantum(esc_circ_t* self);
+
+no_t* head(esc_circ_t* self);
 
 
 #endif

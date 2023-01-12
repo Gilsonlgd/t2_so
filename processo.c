@@ -103,7 +103,7 @@ void processo_executa(processo_t* self, int agora, int quantum) {
     self->metricas[TEMPO_PRONTO] += agora - self->metricas[REL_ULTIMA_PREEMP];
 }
 
-void processo_bloqueia(processo_t* self, mem_t* memoria, cpu_estado_t* cpu_estado, 
+void processo_es_bloqueia(processo_t* self, mem_t* memoria, cpu_estado_t* cpu_estado, 
                       int disp, acesso_t chamada, int agora)
 {
     self->estado = bloqueado;
@@ -113,6 +113,13 @@ void processo_bloqueia(processo_t* self, mem_t* memoria, cpu_estado_t* cpu_estad
     mem_copia(self->memoria, memoria);
     self->metricas[NUM_BLOQUEIOS]++;
     self->metricas[REL_ULTIMO_BLOQUEIO] = agora;
+    self->metricas[TEMPO_EXECUTANDO] += agora - self->metricas[REL_ULTIMA_EXEC];
+}
+
+void processo_quantum_bloqueia(processo_t* self, mem_t* memoria, cpu_estado_t* cpu_estado, int agora){
+    self->estado = pronto;
+    cpue_copia(cpu_estado, self->cpu_estado);
+    mem_copia(self->memoria, memoria);
     self->metricas[TEMPO_EXECUTANDO] += agora - self->metricas[REL_ULTIMA_EXEC];
 }
 
@@ -173,6 +180,23 @@ int processo_t_retorno(processo_t* self)
 void processo_muda_estado(processo_t* self, processo_estado_t estado)
 {
     self->estado = estado;
+}
+
+void processo_imprime_metricas(processo_t* self)
+{
+    if(self->num != 0) {
+        t_printf("num:%d, tempo_retorno: %d, tempo_bloq:%d, "
+                "tempo_exec:%d, tempo_esp:%d, tempoM_retorno:%d, "
+                "num_bloq:%d, num_preemp:%d",
+                self->num,
+                self->t_finalizacao - self->t_criacao,
+                self->metricas[TEMPO_BLOQUEADO],
+                self->metricas[TEMPO_EXECUTANDO],
+                self->metricas[TEMPO_PRONTO],
+                self->metricas[TEMPO_PRONTO] / self->metricas[NUM_PREEMPCOES],
+                self->metricas[NUM_BLOQUEIOS],
+                self->metricas[NUM_PREEMPCOES]);
+    }
 }
 
 

@@ -90,6 +90,11 @@ rel_t *contr_rel(contr_t *self){
   return self->rel;
 }
 
+int contr_cpu_tempo(contr_t *self, int so_tempo_total)
+{
+  return exec_cpu_tempo(self->exec, so_tempo_total);
+}
+
 void contr_laco(contr_t *self)
 {
   // executa uma instrução por vez até SO dizer que chega

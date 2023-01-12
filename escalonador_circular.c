@@ -32,6 +32,11 @@ esc_circ_t* esc_cria(int quantum) {
     return self;
 }
 
+void esc_init(esc_circ_t* self, processo_t* processo)
+{
+    self->em_exec = processo;
+}
+
 void esc_destroi(esc_circ_t* self)
 {
     no_t* atual = self->lista_finalizados;
@@ -111,7 +116,7 @@ void bloqueia_processo_em_exec(esc_circ_t* self, mem_t *mem,
                                cpu_estado_t *cpu_estado, int disp, 
                                acesso_t chamada, rel_t *rel)
 {
-    processo_bloqueia(self->em_exec, mem, cpu_estado, 
+    processo_es_bloqueia(self->em_exec, mem, cpu_estado, 
                       disp, chamada, rel_agora(rel));
     insereI_lista(&self->lista_bloqueados, self->em_exec);
     self->em_exec = NULL;
@@ -142,18 +147,19 @@ void varre_processos_bloqueados(esc_circ_t* self, contr_t *contr, rel_t *rel)
     }
 }
 
-void esc_verifica_quantum(esc_circ_t* self)
+void esc_check_quantum(esc_circ_t* self, mem_t *mem, cpu_estado_t *cpu_estado, rel_t *rel)
 {
     if (self->em_exec == NULL) {
         return;
+    } else {
+        processo_tik(self->em_exec);
     }
+
     if (processo_quantum(self->em_exec) < 0) {
-        processo_muda_estado(self->em_exec, pronto);
+        processo_quantum_bloqueia(self->em_exec, mem, cpu_estado, rel_agora(rel));
         insereF_fila(self, self->em_exec);
         self->em_exec = NULL;
     }
-
-    imprime_tabela(self->head);
 }
 
 bool tem_processo_executando(esc_circ_t* self)
@@ -172,18 +178,9 @@ bool tem_processo_vivo(esc_circ_t* self)
     return true;
 }
 
-void esc_executa(esc_circ_t* self, processo_t* processo)
+int esc_quantum(esc_circ_t* self)
 {
-    self->em_exec = processo;
-}
-
-void imprime_tabela(no_t* self)
-{
-    no_t* atual = self;
-    while (atual != NULL) {
-        t_printf("num: %d estado: %d quantum: %d", processo_num(atual->processo), processo_estado(atual->processo), processo_quantum(atual->processo));
-        atual = atual->next;
-    }
+    return self->quantum;
 }
 
 processo_t* esc_processo_executando(esc_circ_t* self) 
@@ -191,18 +188,31 @@ processo_t* esc_processo_executando(esc_circ_t* self)
     return self->em_exec;
 }
 
-void esc_tik(esc_circ_t* self)
+void imprime_tabela(no_t* self)
 {
-    if(self->em_exec != NULL) processo_tik(self->em_exec);
+    no_t* atual = self;
+    if(atual == NULL) t_printf("vazia");
+    while (atual != NULL) {
+        t_printf("num: %d estado: %d quantum: %d", processo_num(atual->processo), processo_estado(atual->processo), processo_quantum(atual->processo));
+        atual = atual->next;
+    }
 }
 
-int esc_quantum(esc_circ_t* self)
+void imprime_em_exec(esc_circ_t* self)
 {
-    return self->quantum;
+    if (self->em_exec != NULL){
+        t_printf("num: %d estado: %d quantum: %d", processo_num(self->em_exec), processo_estado(self->em_exec), processo_quantum(self->em_exec));
+    } else {
+        t_printf("NULL");
+    }
 }
 
-no_t* head(esc_circ_t* self)
+void esc_imprime_metricas(esc_circ_t *self)
 {
-    return self->head;
+    no_t* atual = self->lista_finalizados;
+    while (atual != NULL) {
+        processo_imprime_metricas(atual->processo);
+        atual = atual->next;
+    }
 }
 

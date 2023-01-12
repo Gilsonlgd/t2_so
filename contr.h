@@ -31,6 +31,7 @@ mem_t *contr_mem(contr_t *self);
 exec_t *contr_exec(contr_t *self);
 es_t *contr_es(contr_t *self);
 rel_t *contr_rel(contr_t *self);
+int contr_cpu_tempo(contr_t *self, int so_tempo_total);
 
 //transfere o conteúdo de uma memória para a memória do contr
 err_t contr_copia_mem(contr_t* self, mem_t* memoria);

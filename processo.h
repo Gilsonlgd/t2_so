@@ -39,8 +39,10 @@ void processo_executa(processo_t* self, int agora, int quantum);
 //- estados da cpu e memoria no momento do bloqueio;
 //- dispositivo que causou o bloqueio;
 //- tipo de chamada que causou o bloqueio (e/s).
-void processo_bloqueia(processo_t* self, mem_t* memoria, cpu_estado_t* cpu_estado, 
+void processo_es_bloqueia(processo_t* self, mem_t* memoria, cpu_estado_t* cpu_estado, 
                       int disp, acesso_t chamada, int agora);
+
+void processo_quantum_bloqueia(processo_t* self, mem_t* memoria, cpu_estado_t* cpu_estado, int agora);
 
 void processo_tik(processo_t* self);
 
@@ -68,6 +70,9 @@ int processo_disp(processo_t* processo);
 int processo_quantum(processo_t* processo);
 
 void processo_muda_estado(processo_t* self, processo_estado_t estado);
+
+void processo_imprime_metricas(processo_t* self);
+
 
 
 #endif

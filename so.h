@@ -36,5 +36,7 @@ bool so_ok(so_t *self);
 void interrupcao_atendida(so_t *self, err_t err);
 
 int so_tempo_total(so_t *self);
+void so_imprime_metricas(so_t *self);
+
 
 #endif // SO_H

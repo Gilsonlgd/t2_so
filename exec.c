@@ -39,6 +39,11 @@ void exec_altera_estado(exec_t *self, cpu_estado_t *estado)
   cpue_copia(estado, self->estado);
 }
 
+int exec_cpu_tempo(exec_t *self, int so_tempo_total)
+{
+  return cpu_tempo_total(self->estado, so_tempo_total);
+}
+
 
 // ---------------------------------------------------------------------
 // funções auxiliares para usar durante a execução das instruções

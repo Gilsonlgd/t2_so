@@ -30,7 +30,7 @@ so_t *so_cria(contr_t *contr)
   //Cria o primeiro processo
   processo_t* processo = processo_cria(0, pronto, rel_agora(rel));
   processo_executa(processo, rel_agora(rel), esc_quantum(self->escalonador));
-  esc_executa(self->escalonador, processo);
+  esc_init(self->escalonador, processo);
   // coloca a CPU em modo usuário
   exec_copia_estado(contr_exec(self->contr), self->cpue);
   cpue_muda_modo(self->cpue, usuario, contr_rel(self->contr));
@@ -205,9 +205,8 @@ static void so_trata_tic(so_t *self)
 {
   processo_t* processo;
   err_t err = ERR_OK;
-  esc_tik(self->escalonador);
-  esc_verifica_quantum(self->escalonador);
-  imprime_tabela(head(self->escalonador));
+  esc_check_quantum(self->escalonador, contr_mem(self->contr), self->cpue, contr_rel(self->contr));
+
   if (!tem_processo_executando(self->escalonador)) {
     processo = retorna_proximo_pronto(self->escalonador);
     if (processo == NULL) {
@@ -232,7 +231,7 @@ static void so_trata_tic(so_t *self)
 void so_int(so_t *self, err_t err)
 {
   varre_processos_bloqueados(self->escalonador, self->contr, contr_rel(self->contr));
- 
+
   switch (err) {
     case ERR_SISOP:
       so_trata_sisop(self);
@@ -252,10 +251,22 @@ bool so_ok(so_t *self)
   if (!tem_processo_vivo(self->escalonador)) {
     self->paniquei = true;
     t_printf("Sistema Finalizado");
-    //printa métricas
+    so_imprime_metricas(self);
     esc_destroi(self->escalonador);
   }
   return !self->paniquei;
+}
+
+void so_imprime_metricas(so_t *self)
+{
+  t_printf("|Informacoes do SO:|\n");
+  t_printf("TempoT_exec: %d, Tempo_CPU: %d, Num_Interrup: %d",  
+          so_tempo_total(self),
+          contr_cpu_tempo(self->contr, so_tempo_total(self)),
+          self->num_interrup);
+  t_printf("----------------------------------------------\n");
+  t_printf("|Metricas dos processos:|\n");
+  esc_imprime_metricas(self->escalonador);
 }
 
 // carrega o programa inicial na memória

@@ -2,6 +2,7 @@
 #include "tela.h"
 #include "escalonador_circular.h"
 #include "processo.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include "rel.h"
 
@@ -22,7 +23,7 @@ so_t *so_cria(contr_t *contr)
   so_t *self = malloc(sizeof(*self));
   if (self == NULL) return NULL;
   rel_t *rel = contr_rel(contr);
-  self->escalonador = esc_cria(4);
+  self->escalonador = esc_cria(10);
   self->contr = contr;
   self->paniquei = false;
   self->cpue = cpue_cria();
@@ -259,14 +260,16 @@ bool so_ok(so_t *self)
 
 void so_imprime_metricas(so_t *self)
 {
-  t_printf("|Informacoes do SO:|\n");
-  t_printf("TempoT_exec: %d, Tempo_CPU: %d, Num_Interrup: %d",  
+  FILE* arq = fopen("metricasCircular.txt", "w");
+  fprintf(arq,"|Informacoes do SO:|\n");
+  fprintf(arq,"TempoT_exec: %d, Tempo_CPU: %d, Num_Interrup: %d",  
           so_tempo_total(self),
           contr_cpu_tempo(self->contr, so_tempo_total(self)),
           self->num_interrup);
-  t_printf("----------------------------------------------\n");
-  t_printf("|Metricas dos processos:|\n");
-  esc_imprime_metricas(self->escalonador);
+  fprintf(arq,"\n----------------------------------------------\n");
+  fprintf(arq,"|Metricas dos processos: quantum = %d|\n", esc_quantum(self->escalonador));
+  esc_imprime_metricas(self->escalonador, arq);
+  fclose(arq);
 }
 
 // carrega o programa inicial na memória
@@ -292,7 +295,6 @@ static void panico(so_t *self)
 {
   t_printf("Problema irrecuperavel no SO");
   self->paniquei = true;
-
 }
 
 void interrupcao_atendida(so_t *self, err_t err) 

@@ -100,7 +100,7 @@ void processo_executa(processo_t* self, int agora, int quantum) {
     self->estado = em_execucao;
     self->quantum = quantum;
     self->metricas[REL_ULTIMA_EXEC] = agora;
-    self->metricas[TEMPO_PRONTO] += agora - self->metricas[REL_ULTIMA_PREEMP];
+    self->metricas[TEMPO_PRONTO] += agora - self->metricas[REL_ULTIMO_DESBLOQUEIO];
 }
 
 void processo_es_bloqueia(processo_t* self, mem_t* memoria, cpu_estado_t* cpu_estado, 
@@ -116,18 +116,18 @@ void processo_es_bloqueia(processo_t* self, mem_t* memoria, cpu_estado_t* cpu_es
     self->metricas[TEMPO_EXECUTANDO] += agora - self->metricas[REL_ULTIMA_EXEC];
 }
 
-void processo_quantum_bloqueia(processo_t* self, mem_t* memoria, cpu_estado_t* cpu_estado, int agora){
+void processo_preempta(processo_t* self, mem_t* memoria, cpu_estado_t* cpu_estado, int agora){
     self->estado = pronto;
     cpue_copia(cpu_estado, self->cpu_estado);
     mem_copia(self->memoria, memoria);
+    self->metricas[NUM_PREEMPCOES]++;
     self->metricas[TEMPO_EXECUTANDO] += agora - self->metricas[REL_ULTIMA_EXEC];
 }
 
 void processo_desbloqueia(processo_t* self, int agora)
 {
     self->estado = pronto;
-    self->metricas[NUM_PREEMPCOES]++;
-    self->metricas[REL_ULTIMA_PREEMP] = agora;
+    self->metricas[REL_ULTIMO_DESBLOQUEIO] = agora;
     self->metricas[TEMPO_BLOQUEADO] += agora - self->metricas[REL_ULTIMO_BLOQUEIO];
 }
 
@@ -167,9 +167,9 @@ int processo_quantum(processo_t* processo)
     return processo->quantum;
 }
 
-int processo_tmedio_retorno(processo_t* self)
+static float processo_tmedio_retorno(processo_t* self)
 {
-    return self->metricas[TEMPO_PRONTO] / self->metricas[NUM_PREEMPCOES];
+    return (float)self->metricas[TEMPO_PRONTO] / (float)(self->metricas[NUM_PREEMPCOES] + (float)self->metricas[NUM_BLOQUEIOS]);
 }
 
 int processo_t_retorno(processo_t* self)
@@ -182,18 +182,24 @@ void processo_muda_estado(processo_t* self, processo_estado_t estado)
     self->estado = estado;
 }
 
-void processo_imprime_metricas(processo_t* self)
+void processo_finaliza(processo_t* self, int agora)
+{
+    self->t_finalizacao = agora;
+}
+
+void processo_imprime_metricas(processo_t* self, FILE* arq)
 {
     if(self->num != 0) {
-        t_printf("num:%d, tempo_retorno: %d, tempo_bloq:%d, "
-                "tempo_exec:%d, tempo_esp:%d, tempoM_retorno:%d, "
-                "num_bloq:%d, num_preemp:%d",
+        fprintf(arq, 
+                "num:%d, tempo_retorno: %d, tempo_bloq: %d,\n "
+                "tempo_exec: %d, tempo_esp: %d, tempoM_retorno: %.10f,\n "
+                "num_bloq: %d, num_preemp: %d \n\n",
                 self->num,
                 self->t_finalizacao - self->t_criacao,
                 self->metricas[TEMPO_BLOQUEADO],
                 self->metricas[TEMPO_EXECUTANDO],
                 self->metricas[TEMPO_PRONTO],
-                self->metricas[TEMPO_PRONTO] / self->metricas[NUM_PREEMPCOES],
+                processo_tmedio_retorno(self),
                 self->metricas[NUM_BLOQUEIOS],
                 self->metricas[NUM_PREEMPCOES]);
     }

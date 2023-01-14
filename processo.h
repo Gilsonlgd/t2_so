@@ -14,7 +14,7 @@ typedef enum {
     TEMPO_PRONTO, 
     TEMPO_EXECUTANDO, 
     TEMPO_BLOQUEADO,
-    REL_ULTIMA_PREEMP, 
+    REL_ULTIMO_DESBLOQUEIO, 
     REL_ULTIMA_EXEC, 
     REL_ULTIMO_BLOQUEIO,
     NUM_BLOQUEIOS,
@@ -42,7 +42,7 @@ void processo_executa(processo_t* self, int agora, int quantum);
 void processo_es_bloqueia(processo_t* self, mem_t* memoria, cpu_estado_t* cpu_estado, 
                       int disp, acesso_t chamada, int agora);
 
-void processo_quantum_bloqueia(processo_t* self, mem_t* memoria, cpu_estado_t* cpu_estado, int agora);
+void processo_preempta(processo_t* self, mem_t* memoria, cpu_estado_t* cpu_estado, int agora);
 
 void processo_tik(processo_t* self);
 
@@ -71,7 +71,9 @@ int processo_quantum(processo_t* processo);
 
 void processo_muda_estado(processo_t* self, processo_estado_t estado);
 
-void processo_imprime_metricas(processo_t* self);
+void processo_finaliza(processo_t* self, int agora);
+
+void processo_imprime_metricas(processo_t* self, FILE* arq);
 
 
 

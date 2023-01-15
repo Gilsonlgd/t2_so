@@ -20,8 +20,9 @@ void esc_destroi(esc_circ_t* self);
 // cria um nó de fila ou lista
 no_t* cria_no(processo_t* processo);
 
-//insere no final da fila de processos prontos do esc
-void insereF_fila(esc_circ_t *self, processo_t* processo);
+//insere na lista de processos prontos do esc de forma ordenada
+// obs.: ordenado de forma crescente a partir do tempo medio de exec dos processos
+void insereOrdenado_lista(esc_circ_t *self, processo_t* processo);
 
 //insere no inicio de uma lista
 void insereI_lista(no_t** head, processo_t* processo);

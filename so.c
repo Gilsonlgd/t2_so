@@ -23,7 +23,7 @@ so_t *so_cria(contr_t *contr)
   so_t *self = malloc(sizeof(*self));
   if (self == NULL) return NULL;
   rel_t *rel = contr_rel(contr);
-  self->escalonador = esc_cria(10);
+  self->escalonador = esc_cria(20);
   self->contr = contr;
   self->paniquei = false;
   self->cpue = cpue_cria();
@@ -165,7 +165,7 @@ static void so_trata_sisop_cria(so_t *self)
   if (err != ERR_OK) {
     panico(self);
   } else {
-    insereF_fila(self->escalonador, processo);
+    insere_fila(self->escalonador, processo);
   }
   // interrupção da cpu foi atendida
   interrupcao_atendida(self, err);
@@ -260,7 +260,7 @@ bool so_ok(so_t *self)
 
 void so_imprime_metricas(so_t *self)
 {
-  FILE* arq = fopen("metricasCircular.txt", "w");
+  FILE* arq = fopen("metricas.txt", "w");
   fprintf(arq,"|Informacoes do SO:|\n");
   fprintf(arq,"TempoT_exec: %d, Tempo_CPU: %d, Num_Interrup: %d",  
           so_tempo_total(self),

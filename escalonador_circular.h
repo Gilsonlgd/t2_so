@@ -20,8 +20,8 @@ void esc_destroi(esc_circ_t* self);
 // cria um nó de fila ou lista
 no_t* cria_no(processo_t* processo);
 
-//insere no final da fila de processos prontos do esc
-void insereF_fila(esc_circ_t *self, processo_t* processo);
+//insere um processo na fila de processos prontos do esc
+void insere_fila(esc_circ_t *self, processo_t* processo);
 
 //insere no inicio de uma lista
 void insereI_lista(no_t** head, processo_t* processo);

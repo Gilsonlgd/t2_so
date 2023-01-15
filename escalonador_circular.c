@@ -64,7 +64,7 @@ no_t* cria_no(processo_t* processo) {
     }
 }
 
-void insereF_fila(esc_circ_t *self, processo_t* processo) {
+void insere_fila(esc_circ_t *self, processo_t* processo) {
     no_t** last = &self->last;
     no_t* novo_no = cria_no(processo);
     if(*last == NULL) {
@@ -135,13 +135,14 @@ void varre_processos_bloqueados(esc_circ_t* self, contr_t *contr, rel_t *rel)
                         processo_chamada(atual->processo));
         if(pronto) {
             processo_desbloqueia(atual->processo, rel_agora(rel));
-            insereF_fila(self, atual->processo);
+            insere_fila(self, atual->processo);
             if (anterior == NULL) {
                 *lista = atual->next;
             } else {
                 anterior->next = atual->next;
             }
-            //fazer free do nó atual.
+            free(atual);
+            break;
         }
         anterior = atual;
         atual = atual->next;
@@ -158,7 +159,7 @@ void esc_check_quantum(esc_circ_t* self, mem_t *mem, cpu_estado_t *cpu_estado, r
 
     if (processo_quantum(self->em_exec) < 0) {
         processo_preempta(self->em_exec, mem, cpu_estado, rel_agora(rel));
-        insereF_fila(self, self->em_exec);
+        insere_fila(self, self->em_exec);
         self->em_exec = NULL;
     }
 }

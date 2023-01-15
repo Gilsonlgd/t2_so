@@ -33,6 +33,7 @@ processo_t *processo_cria(int num, processo_estado_t estado, int agora)
     self->t_criacao = agora;
     self->t_finalizacao = 0;
     self->metricas = calloc(8, sizeof(int));
+    self->quantum = 0;
     return self;
 }
 
@@ -136,6 +137,11 @@ void processo_tik(processo_t* self)
     if (self->quantum >= 0) self->quantum--;
 }
 
+void processo_setQuantum(processo_t* self, int quantum)
+{
+    self->quantum = quantum;
+}
+
 mem_t* processo_mem(processo_t* self) {
     return self->memoria;
 }
@@ -167,9 +173,14 @@ int processo_quantum(processo_t* processo)
     return processo->quantum;
 }
 
-static float processo_tmedio_retorno(processo_t* self)
+float processo_tmedio_exec(processo_t* self)
 {
-    return (float)self->metricas[TEMPO_PRONTO] / (float)(self->metricas[NUM_PREEMPCOES] + (float)self->metricas[NUM_BLOQUEIOS]);
+    return (float)self->metricas[TEMPO_EXECUTANDO] / ((float)(self->metricas[NUM_PREEMPCOES] + (float)self->metricas[NUM_BLOQUEIOS]));
+}
+
+float processo_tmedio_retorno(processo_t* self)
+{
+    return (float)self->metricas[TEMPO_PRONTO] / ((float)(self->metricas[NUM_PREEMPCOES] + (float)self->metricas[NUM_BLOQUEIOS]));
 }
 
 int processo_t_retorno(processo_t* self)

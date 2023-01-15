@@ -1,0 +1,16 @@
+|Informacoes do SO:|
+TempoT_exec: 760, Tempo_CPU: 760, Num_Interrup: 147
+----------------------------------------------
+|Metricas dos processos: quantum = 20|
+num:2, tempo_retorno: 756, tempo_bloq: 597,
+ tempo_exec: 53, tempo_esp: 65, tempoM_retorno: 65,0000000000,
+ num_bloq: 1, num_preemp: 0 
+
+num:3, tempo_retorno: 575, tempo_bloq: 262,
+ tempo_exec: 107, tempo_esp: 201, tempoM_retorno: 22,3333339691,
+ num_bloq: 9, num_preemp: 0 
+
+num:1, tempo_retorno: 553, tempo_bloq: 306,
+ tempo_exec: 153, tempo_esp: 86, tempoM_retorno: 21,5000000000,
+ num_bloq: 4, num_preemp: 0 
+

@@ -46,6 +46,8 @@ void processo_preempta(processo_t* self, mem_t* memoria, cpu_estado_t* cpu_estad
 
 void processo_tik(processo_t* self);
 
+void processo_setQuantum(processo_t* self, int quantum);
+
 //muda o estado do processo para pronto
 void processo_desbloqueia(processo_t* self, int agora);
 
@@ -74,6 +76,9 @@ void processo_muda_estado(processo_t* self, processo_estado_t estado);
 void processo_finaliza(processo_t* self, int agora);
 
 void processo_imprime_metricas(processo_t* self, FILE* arq);
+
+float processo_tmedio_retorno(processo_t* self);
+float processo_tmedio_exec(processo_t* self);
 
 
 

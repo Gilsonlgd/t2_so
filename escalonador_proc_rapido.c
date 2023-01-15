@@ -39,6 +39,7 @@ void esc_init(esc_circ_t* self, processo_t* processo)
 
 void esc_destroi(esc_circ_t* self)
 {
+    //apenas usado para registrar métricas
     no_t* atual = self->lista_finalizados;
     
     while (atual != NULL) {
@@ -64,16 +65,35 @@ no_t* cria_no(processo_t* processo) {
     }
 }
 
-void insereF_fila(esc_circ_t *self, processo_t* processo) {
+void insereOrdenado_lista(esc_circ_t *self, processo_t* processo) {
+    no_t** head = &self->head;
     no_t** last = &self->last;
     no_t* novo_no = cria_no(processo);
-    if(*last == NULL) {
-        *last = novo_no;
-        no_t** head = &self->head;
-        *head = novo_no;
+    int p_tmedio;
+    if (processo_quantum(processo) == 0) {
+        p_tmedio = self->quantum;
     } else {
-        (*last)->next = novo_no;
-        *last = novo_no;   
+        p_tmedio = processo_tmedio_exec(processo);
+    }
+
+    if(*head == NULL) {
+        *head = novo_no;
+        *last = novo_no;
+    } else {
+        if (p_tmedio < processo_tmedio_exec((*head)->processo)) {
+            novo_no->next = *head;
+            *head = novo_no;
+        } else if (p_tmedio > processo_tmedio_exec((*last)->processo)) {
+            (*last)->next = novo_no;
+            *last = novo_no;
+        } else {
+            no_t* atual = *head;
+            while (atual->next != NULL && p_tmedio > processo_tmedio_exec(atual->next->processo)) {
+                atual = atual->next;
+            }
+            novo_no->next = atual->next;
+            atual->next = novo_no;
+        }
     }
 }
 
@@ -135,13 +155,14 @@ void varre_processos_bloqueados(esc_circ_t* self, contr_t *contr, rel_t *rel)
                         processo_chamada(atual->processo));
         if(pronto) {
             processo_desbloqueia(atual->processo, rel_agora(rel));
-            insereF_fila(self, atual->processo);
+            insereOrdenado_lista(self, atual->processo);
             if (anterior == NULL) {
                 *lista = atual->next;
             } else {
                 anterior->next = atual->next;
             }
-            //fazer free do nó atual.
+            free(atual);
+            break;
         }
         anterior = atual;
         atual = atual->next;
@@ -158,7 +179,7 @@ void esc_check_quantum(esc_circ_t* self, mem_t *mem, cpu_estado_t *cpu_estado, r
 
     if (processo_quantum(self->em_exec) < 0) {
         processo_preempta(self->em_exec, mem, cpu_estado, rel_agora(rel));
-        insereF_fila(self, self->em_exec);
+        insereOrdenado_lista(self, self->em_exec);
         self->em_exec = NULL;
     }
 }

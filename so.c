@@ -23,7 +23,7 @@ so_t *so_cria(contr_t *contr)
   so_t *self = malloc(sizeof(*self));
   if (self == NULL) return NULL;
   rel_t *rel = contr_rel(contr);
-  self->escalonador = esc_cria(20);
+  self->escalonador = esc_cria(5);
   self->contr = contr;
   self->paniquei = false;
   self->cpue = cpue_cria();
@@ -67,18 +67,8 @@ static void so_trata_sisop_le(so_t *self)
   } else {
     bloqueia_processo_em_exec(self->escalonador, contr_mem(self->contr), 
                               self->cpue, disp, leitura, contr_rel(self->contr));
-    processo_t* processo = retorna_proximo_pronto(self->escalonador);
-    if (processo == NULL) {
-      cpue_muda_modo(self->cpue, zumbi, contr_rel(self->contr));
-      inc = 0;
-    } else {
-      cpue_muda_modo(self->cpue, usuario, contr_rel(self->contr));
-      processo_executa(processo, rel_agora( contr_rel(self->contr) ), esc_quantum(self->escalonador));
-      cpue_copia(processo_cpu(processo), self->cpue);
-      contr_copia_mem(self->contr, processo_mem(processo));
-      inc = 0;
-    }
-    
+    chama_escalonamento(self);
+    inc = 0; 
   }
   // incrementa o PC
   cpue_muda_PC(self->cpue, cpue_PC(self->cpue) + inc);
@@ -108,17 +98,8 @@ static void so_trata_sisop_escr(so_t *self)
   } else {
     bloqueia_processo_em_exec(self->escalonador, contr_mem(self->contr), 
                               self->cpue, disp, escrita, contr_rel(self->contr));
-    processo_t* processo = retorna_proximo_pronto(self->escalonador);
-    if (processo == NULL) {
-      cpue_muda_modo(self->cpue, zumbi, contr_rel(self->contr));
-      inc = 0;
-    } else {
-      cpue_muda_modo(self->cpue, usuario, contr_rel(self->contr));
-      processo_executa(processo, rel_agora( contr_rel(self->contr) ), esc_quantum(self->escalonador));
-      cpue_copia(processo_cpu(processo), self->cpue);
-      contr_copia_mem(self->contr, processo_mem(processo));
-      inc = 0;
-    }
+    chama_escalonamento(self);
+    inc = 0; 
   }
 
   // interrupção da cpu foi atendida
@@ -138,15 +119,7 @@ static void so_trata_sisop_fim(so_t *self)
     t_printf("Erro na finalização do processo.");
     self->paniquei = true;
   } else {
-    processo_t* processo = retorna_proximo_pronto(self->escalonador);
-    if (processo == NULL) {
-      cpue_muda_modo(self->cpue, zumbi, contr_rel(self->contr));
-    } else {
-      cpue_muda_modo(self->cpue, usuario, contr_rel(self->contr));
-      processo_executa(processo, rel_agora( contr_rel(self->contr) ), esc_quantum(self->escalonador));
-      cpue_copia(processo_cpu(processo), self->cpue);
-      contr_copia_mem(self->contr, processo_mem(processo));     
-    }
+    chama_escalonamento(self);
     // interrupção da cpu foi atendida
     interrupcao_atendida(self, err);
     cpue_muda_erro(self->cpue, ERR_OK, 0);
@@ -204,20 +177,11 @@ static void so_trata_sisop(so_t *self)
 // trata uma interrupção de tempo do relógio
 static void so_trata_tic(so_t *self)
 {
-  processo_t* processo;
   err_t err = ERR_OK;
   esc_check_quantum(self->escalonador, contr_mem(self->contr), self->cpue, contr_rel(self->contr));
 
   if (!tem_processo_executando(self->escalonador)) {
-    processo = retorna_proximo_pronto(self->escalonador);
-    if (processo == NULL) {
-      cpue_muda_modo(self->cpue, zumbi, contr_rel(self->contr));
-    } else {
-      cpue_muda_modo(self->cpue, usuario, contr_rel(self->contr));
-      processo_executa(processo, rel_agora( contr_rel(self->contr) ), esc_quantum(self->escalonador));
-      cpue_copia(processo_cpu(processo), self->cpue);
-      err = contr_copia_mem(self->contr, processo_mem(processo));
-    }
+    chama_escalonamento(self);
     // interrupção da cpu foi atendida
     interrupcao_atendida(self, err);
     cpue_muda_erro(self->cpue, err, 0);
@@ -225,6 +189,24 @@ static void so_trata_tic(so_t *self)
     cpue_muda_PC(self->cpue, cpue_PC(self->cpue));
     // altera o estado da CPU
     exec_altera_estado(contr_exec(self->contr), self->cpue);
+  }
+}
+
+void chama_escalonamento(so_t* self)
+{
+  //int inc = 2; 
+  if(!tem_processo_executando(self->escalonador)) {
+    processo_t* processo = retorna_proximo_pronto(self->escalonador);
+    if (processo == NULL) {
+      cpue_muda_modo(self->cpue, zumbi, contr_rel(self->contr));
+      //inc = 0;
+    } else {
+      cpue_muda_modo(self->cpue, usuario, contr_rel(self->contr));
+      processo_executa(processo, rel_agora( contr_rel(self->contr) ), esc_quantum(self->escalonador));
+      cpue_copia(processo_cpu(processo), self->cpue);
+      contr_copia_mem(self->contr, processo_mem(processo));
+      //inc = 0;
+    }
   }
 }
 

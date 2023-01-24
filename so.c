@@ -54,7 +54,6 @@ void so_destroi(so_t *self)
 static void so_trata_sisop_le(so_t *self)
 {
   bool pronto;
-  int inc = 2;
   int disp = cpue_A(self->cpue);
   int val;
   err_t err = ERR_OK;
@@ -67,16 +66,7 @@ static void so_trata_sisop_le(so_t *self)
   } else {
     bloqueia_processo_em_exec(self->escalonador, contr_mem(self->contr), 
                               self->cpue, disp, leitura, contr_rel(self->contr));
-    chama_escalonamento(self);
-    inc = 0; 
   }
-  // incrementa o PC
-  cpue_muda_PC(self->cpue, cpue_PC(self->cpue) + inc);
-  // interrupção da cpu foi atendida
-  interrupcao_atendida(self, err);
-  cpue_muda_erro(self->cpue, err, 0);
-  // altera o estado da CPU
-  exec_altera_estado(contr_exec(self->contr), self->cpue);
 }
 
 // chamada de sistema para escrita de E/S
@@ -86,7 +76,6 @@ static void so_trata_sisop_le(so_t *self)
 static void so_trata_sisop_escr(so_t *self)
 {
   bool pronto;
-  int inc = 2;
   int disp = cpue_A(self->cpue);
   int val = cpue_X(self->cpue);
   err_t err = ERR_OK;
@@ -97,18 +86,8 @@ static void so_trata_sisop_escr(so_t *self)
     cpue_muda_A(self->cpue, err);
   } else {
     bloqueia_processo_em_exec(self->escalonador, contr_mem(self->contr), 
-                              self->cpue, disp, escrita, contr_rel(self->contr));
-    chama_escalonamento(self);
-    inc = 0; 
+                              self->cpue, disp, escrita, contr_rel(self->contr)); 
   }
-
-  // interrupção da cpu foi atendida
-  interrupcao_atendida(self, err);
-  cpue_muda_erro(self->cpue, err, 0);
-  // incrementa o PC
-  cpue_muda_PC(self->cpue, cpue_PC(self->cpue)+ inc);
-  // altera o estado da CPU
-  exec_altera_estado(contr_exec(self->contr), self->cpue);
 }
 
 // chamada de sistema para término do processo
@@ -116,17 +95,8 @@ static void so_trata_sisop_fim(so_t *self)
 {
   err_t err = finaliza_processo_em_exec(self->escalonador, contr_rel(self->contr));
   if(err != ERR_OK) {
-    t_printf("Erro na finalização do processo.");
+    t_printf("Erro na finalizacao do processo.");
     self->paniquei = true;
-  } else {
-    chama_escalonamento(self);
-    // interrupção da cpu foi atendida
-    interrupcao_atendida(self, err);
-    cpue_muda_erro(self->cpue, ERR_OK, 0);
-    // incrementa o PC
-    cpue_muda_PC(self->cpue, cpue_PC(self->cpue));
-    // altera o estado da CPU (deveria alterar o estado do processo)
-    exec_altera_estado(contr_exec(self->contr), self->cpue);
   }
 }
 
@@ -140,13 +110,6 @@ static void so_trata_sisop_cria(so_t *self)
   } else {
     insere_fila(self->escalonador, processo);
   }
-  // interrupção da cpu foi atendida
-  interrupcao_atendida(self, err);
-  cpue_muda_erro(self->cpue, err, 0);
-  // incrementa o PC
-  cpue_muda_PC(self->cpue, cpue_PC(self->cpue)+2);
-  // altera o estado da CPU 
-  exec_altera_estado(contr_exec(self->contr), self->cpue);
 }
 
 // trata uma interrupção de chamada de sistema
@@ -177,37 +140,37 @@ static void so_trata_sisop(so_t *self)
 // trata uma interrupção de tempo do relógio
 static void so_trata_tic(so_t *self)
 {
-  err_t err = ERR_OK;
   esc_check_quantum(self->escalonador, contr_mem(self->contr), self->cpue, contr_rel(self->contr));
-
-  if (!tem_processo_executando(self->escalonador)) {
-    chama_escalonamento(self);
-    // interrupção da cpu foi atendida
-    interrupcao_atendida(self, err);
-    cpue_muda_erro(self->cpue, err, 0);
-    // incrementa o PC
-    cpue_muda_PC(self->cpue, cpue_PC(self->cpue));
-    // altera o estado da CPU
-    exec_altera_estado(contr_exec(self->contr), self->cpue);
-  }
 }
 
-void chama_escalonamento(so_t* self)
+void chama_escalonamento(so_t* self, err_t err)
 {
-  //int inc = 2; 
-  if(!tem_processo_executando(self->escalonador)) {
+  bool executando = tem_processo_executando(self->escalonador);
+  int inc = 2;
+  // se tem processo executando e não é chamada de sistema
+  // não faz nada
+  if (executando && err == ERR_TIC) return;
+
+  // se n tiver processo executando, então executa!
+  if(!executando) {
     processo_t* processo = retorna_proximo_pronto(self->escalonador);
     if (processo == NULL) {
       cpue_muda_modo(self->cpue, zumbi, contr_rel(self->contr));
-      //inc = 0;
     } else {
       cpue_muda_modo(self->cpue, usuario, contr_rel(self->contr));
       processo_executa(processo, rel_agora( contr_rel(self->contr) ), esc_quantum(self->escalonador));
       cpue_copia(processo_cpu(processo), self->cpue);
       contr_copia_mem(self->contr, processo_mem(processo));
-      //inc = 0;
     }
+    inc = 0;
   }
+  // interrupção da cpu foi atendida
+  interrupcao_atendida(self, ERR_OK);
+  cpue_muda_erro(self->cpue, ERR_OK, 0);
+  // incrementa o PC
+  cpue_muda_PC(self->cpue, cpue_PC(self->cpue) + inc);
+  // altera o estado da CPU
+  exec_altera_estado(contr_exec(self->contr), self->cpue);
 }
 
 // houve uma interrupção do tipo err — trate-a
@@ -226,6 +189,8 @@ void so_int(so_t *self, err_t err)
       t_printf("SO: interrupção não tratada [%s]", err_nome(err));
       self->paniquei = true;
   }
+  
+  chama_escalonamento(self, err);
 }
 
 // retorna false se o sistema deve ser desligado

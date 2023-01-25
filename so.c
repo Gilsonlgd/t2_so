@@ -1,6 +1,7 @@
 #include "so.h"
 #include "tela.h"
-#include "escalonador_circular.h"
+//#include "escalonador_circular.h"
+#include "escalonador_proc_rapido.h"
 #include "processo.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,7 +11,8 @@ struct so_t {
   contr_t *contr;       // o controlador do hardware
   bool paniquei;        // apareceu alguma situação intratável
   cpu_estado_t *cpue;   // cópia do estado da CPU
-  esc_circ_t* escalonador;    // tabela de processos
+  //esc_circ_t* escalonador;    // tabela de processos
+  esc_rap_t* escalonador;
   int num_interrup;
 };
 
@@ -108,7 +110,8 @@ static void so_trata_sisop_cria(so_t *self)
   if (err != ERR_OK) {
     panico(self);
   } else {
-    insere_fila(self->escalonador, processo);
+    //insere_fila(self->escalonador, processo);
+    insereOrdenado_lista(self->escalonador, processo);
   }
 }
 

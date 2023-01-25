@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "escalonador_circular.h"
+#include "escalonador_proc_rapido.h"
 #include "processo.h"
 #include "err.h"
 #include "es.h"
@@ -12,7 +12,7 @@ struct no_t {
     no_t* next;
 };
 
-struct esc_circ_t {
+struct esc_rap_t {
     int quantum;
     no_t* head;
     no_t* last;
@@ -21,8 +21,8 @@ struct esc_circ_t {
     no_t* lista_finalizados;
 };
 
-esc_circ_t* esc_cria(int quantum) {
-    esc_circ_t* self = malloc(sizeof(*self));
+esc_rap_t* esc_cria(int quantum) {
+    esc_rap_t* self = malloc(sizeof(*self));
     self->head = NULL;
     self->last = NULL;
     self->em_exec = NULL;
@@ -32,12 +32,12 @@ esc_circ_t* esc_cria(int quantum) {
     return self;
 }
 
-void esc_init(esc_circ_t* self, processo_t* processo)
+void esc_init(esc_rap_t* self, processo_t* processo)
 {
     self->em_exec = processo;
 }
 
-void esc_destroi(esc_circ_t* self)
+void esc_destroi(esc_rap_t* self)
 {
     //apenas usado para registrar métricas
     no_t* atual = self->lista_finalizados;
@@ -65,7 +65,7 @@ no_t* cria_no(processo_t* processo) {
     }
 }
 
-void insereOrdenado_lista(esc_circ_t *self, processo_t* processo) {
+void insereOrdenado_lista(esc_rap_t *self, processo_t* processo) {
     no_t** head = &self->head;
     no_t** last = &self->last;
     no_t* novo_no = cria_no(processo);
@@ -104,7 +104,7 @@ void insereI_lista(no_t** head, processo_t* processo)
     *head = novo_no;
 }
 
-processo_t* retorna_proximo_pronto(esc_circ_t* self) {
+processo_t* retorna_proximo_pronto(esc_rap_t* self) {
     no_t** head = &self->head;
     if (*head == NULL) {
         return NULL;
@@ -120,7 +120,7 @@ processo_t* retorna_proximo_pronto(esc_circ_t* self) {
     return self->em_exec;
 }
 
-err_t finaliza_processo_em_exec(esc_circ_t* self, rel_t *rel)
+err_t finaliza_processo_em_exec(esc_rap_t* self, rel_t *rel)
 {   
     err_t err = ERR_OK;
     //Se não resgistrar as métricas de cada processo:
@@ -133,7 +133,7 @@ err_t finaliza_processo_em_exec(esc_circ_t* self, rel_t *rel)
     return err;   
 }
 
-void bloqueia_processo_em_exec(esc_circ_t* self, mem_t *mem, 
+void bloqueia_processo_em_exec(esc_rap_t* self, mem_t *mem, 
                                cpu_estado_t *cpu_estado, int disp, 
                                acesso_t chamada, rel_t *rel)
 {
@@ -143,7 +143,7 @@ void bloqueia_processo_em_exec(esc_circ_t* self, mem_t *mem,
     self->em_exec = NULL;
 }
 
-void varre_processos_bloqueados(esc_circ_t* self, contr_t *contr, rel_t *rel)
+void varre_processos_bloqueados(esc_rap_t* self, contr_t *contr, rel_t *rel)
 {
     no_t** lista = &self->lista_bloqueados;
     no_t* atual = *lista;
@@ -169,7 +169,7 @@ void varre_processos_bloqueados(esc_circ_t* self, contr_t *contr, rel_t *rel)
     }
 }
 
-void esc_check_quantum(esc_circ_t* self, mem_t *mem, cpu_estado_t *cpu_estado, rel_t *rel)
+void esc_check_quantum(esc_rap_t* self, mem_t *mem, cpu_estado_t *cpu_estado, rel_t *rel)
 {
     if (self->em_exec == NULL) {
         return;
@@ -184,13 +184,13 @@ void esc_check_quantum(esc_circ_t* self, mem_t *mem, cpu_estado_t *cpu_estado, r
     }
 }
 
-bool tem_processo_executando(esc_circ_t* self)
+bool tem_processo_executando(esc_rap_t* self)
 {
     if(self->em_exec != NULL) return true;
     return false;
 }
 
-bool tem_processo_vivo(esc_circ_t* self)
+bool tem_processo_vivo(esc_rap_t* self)
 {
     no_t* head = self->head;
     no_t* head_bloqueados = self->lista_bloqueados;
@@ -200,12 +200,12 @@ bool tem_processo_vivo(esc_circ_t* self)
     return true;
 }
 
-int esc_quantum(esc_circ_t* self)
+int esc_quantum(esc_rap_t* self)
 {
     return self->quantum;
 }
 
-processo_t* esc_processo_executando(esc_circ_t* self) 
+processo_t* esc_processo_executando(esc_rap_t* self) 
 {
     return self->em_exec;
 }
@@ -220,7 +220,7 @@ void imprime_tabela(no_t* self)
     }
 }
 
-void imprime_em_exec(esc_circ_t* self)
+void imprime_em_exec(esc_rap_t* self)
 {
     if (self->em_exec != NULL){
         t_printf("num: %d estado: %d quantum: %d", processo_num(self->em_exec), processo_estado(self->em_exec), processo_quantum(self->em_exec));
@@ -229,7 +229,7 @@ void imprime_em_exec(esc_circ_t* self)
     }
 }
 
-void esc_imprime_metricas(esc_circ_t *self, FILE* arq)
+void esc_imprime_metricas(esc_rap_t *self, FILE* arq)
 {
     no_t* atual = self->lista_finalizados;
     while (atual != NULL) {

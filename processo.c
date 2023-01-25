@@ -40,6 +40,7 @@ processo_t *processo_cria(int num, processo_estado_t estado, int agora)
 err_t processo_init_mem(processo_t *self)
 {
     int num = self->num;
+    int tam_progr = 0;
 
     switch (num)
     {
@@ -47,8 +48,8 @@ err_t processo_init_mem(processo_t *self)
         int progr1[] = {
             #include "p1.maq"
         };
-        int tam_progr1 = sizeof(progr1)/sizeof(progr1[0]);
-        return transf_mem(self, progr1, tam_progr1);
+        tam_progr = sizeof(progr1)/sizeof(progr1[0]);
+        return transf_mem(self, progr1, tam_progr);
     case 2:
         int progr2[] = {
             #include "p2.maq"

@@ -62,6 +62,30 @@ err_t processo_init_mem(processo_t *self)
         };
         int tam_progr3 = sizeof(progr3)/sizeof(progr3[0]);
         return transf_mem(self, progr3, tam_progr3);
+    case 5:
+        int progr5[] = {
+            #include "peq_cpu.maq"
+        };
+        tam_progr = sizeof(progr5)/sizeof(progr5[0]);
+        return transf_mem(self, progr5, tam_progr);
+    case 6:
+        int progr6[] = {
+            #include "grande_cpu.maq"
+        };
+        tam_progr = sizeof(progr6)/sizeof(progr6[0]);
+        return transf_mem(self, progr6, tam_progr);
+    case 7:
+        int progr7[] = {
+            #include "peq_es.maq"
+        };
+        tam_progr = sizeof(progr7)/sizeof(progr7[0]);
+        return transf_mem(self, progr7, tam_progr);
+    case 8:
+        int progr8[] = {
+            #include "grande_es.maq"
+        };
+        tam_progr = sizeof(progr8)/sizeof(progr8[0]);
+        return transf_mem(self, progr8, tam_progr);
     default:
         int* progr = NULL;
         return transf_mem(self, progr, 0);

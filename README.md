@@ -7,6 +7,7 @@
 ## Observações importantes:
 - Ao rodar o sistema, caso haja necessidade de trocar o escalonador, descomente o `#include` do outro escalonador e comente o do atual. Após isso o compilador dirá quais funções não batem e te leva até onde elas devem ser comentadas ou não;
 - Essa parte do trabalho está com um bug ao utilizar os processos criados pelo professor para o T3 (eles seguem em loop infinito). Eu corrigi o problema durante a implementação do T3 porém não corrigi no T2 e agora não lembro o que era kkkk;
+- Dessa forma as métricas apresentadas são correspondentes a 3 processos: p1(imprime de 1 até o num digitado no t0), p2(igual p1 so que no terminal 1) e p3 (lê numeros aleatórios);
 
 ## Escalonador Circular:
 - São implementadas 2 listas:
